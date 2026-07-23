@@ -1,0 +1,24 @@
+{
+"editor.trimAutoWhitespace": false,
+"editor.inlineSuggest.enabled": false,
+"github.copilot.enable": {
+  "*": false
+},
+"[lua]": {
+  "editor.defaultFormatter": "JohnnyMorganz.stylua",
+  "editor.formatOnSave": true
+},
+"[luau]": {
+  "editor.defaultFormatter": "JohnnyMorganz.stylua",
+  "editor.formatOnSave": true
+},
+"workbench.editor.customLabels.patterns": {
+  "**/init.lua": "${dirname} (${filename}.${extname})",
+  "**/init.luau": "${dirname} (${filename}.${extname})"
+},
+"luau-lsp.completion.imports.enabled": true,
+"luau-lsp.completion.imports.stringRequires.enabled": true,
+"luau-lsp.sourcemap.autogenerate": true,
+"luau-lsp.studioPlugin.enabled": true,
+"luau-lsp.studioPlugin.port": 3667
+}

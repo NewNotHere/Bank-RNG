@@ -1,0 +1,38 @@
+{
+  "name": "Bank RNG",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Controllers": {
+        "$path": "src/controllers"
+      },
+      "Packages": {
+        "$path": "Packages"
+      }
+    },
+
+    "ServerScriptService": {
+      "Services": {
+        "$path": "src/services"
+      },
+      "init": {
+        "$path": "src/startup/main.server.luau"
+      },
+      "ServerOnly": {
+        "$path": "src/serverOnly"
+      }
+    },
+
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "init": {
+          "$path": "src/startup/main.client.luau"
+        }
+      }
+    }
+  }
+}
