@@ -44,7 +44,10 @@ function PlotCamera.update(self: PlotCamera, dt: number)
 		self:moveZ(-1)
 	end
 
-	local originCFrame = CFrame.new(plotSpawn.Position + Vector3.new(0, 20, 0), self._plot:GetPivot().Position)
+	local plotCFrame = self._plot:GetPivot()
+	local _, bboxSize = self._plot:GetBoundingBox()
+	local originCFrame =
+		CFrame.new(plotCFrame.Position + Vector3.new(0, 20, bboxSize.Z), self._plot:GetPivot().Position)
 
 	local cf = self:getCFrame()
 	local flatLook = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)

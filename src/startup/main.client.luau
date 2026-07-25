@@ -21,4 +21,4 @@ local plot = PlotController:getPlot()
 PlacementController:setPlotModel(plot)
 PlacementController:start()
 
---CameraController:switchCam(Camera.PlotCamera.new(plot))
+CameraController:switchCam(Camera.PlotCamera.new(plot))

@@ -44,4 +44,8 @@ function DefaultCamera.getCFrame(self: DefaultCamera)
 	return self._camera.CFrame
 end
 
+function DefaultCamera.projectVirtualCursor(self: DefaultCamera, virtualCursor: Vector2)
+	return self._camera:ViewportPointToRay(virtualCursor.X, virtualCursor.Y)
+end
+
 return DefaultCamera

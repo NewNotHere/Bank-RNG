@@ -10,6 +10,11 @@ export type Controller<T> = {
 	abort: (self: T) -> (),
 }
 
+export type InputMap = {
+	Key: Enum.KeyCode | Enum.UserInputType,
+	Value: number | Vector2,
+}
+
 export type PlacementController = Controller<PlacementController> & {
 	_mouse: Mouse,
 	_plotModel: Model?,
@@ -54,6 +59,16 @@ export type CameraController = Controller<CameraController> & {
 }
 
 export type UIController = Controller<UIController> & {}
+export type InputController = Controller<InputController> & {
+	_actions: { string },
+	_mappings: { InputMap },
+	_values: { [Enum.KeyCode | Enum.UserInputType]: number | Vector2 },
+	_inputType: Enum.PreferredInput,
+
+	registerInputMap: (self: InputController, inputMap: InputMap) -> (),
+	getInputValue: (self: InputController, key: Enum.KeyCode | Enum.UserInputType) -> (number | Vector2)?,
+	getDeviceInput: (self: InputController) -> Enum.PreferredInput,
+}
 
 export type Mouse = {
 	_camera: Camera,
@@ -75,6 +90,7 @@ export type DefaultCamera<T> = {
 
 	update: (self: T, dt: number) -> (),
 	getCFrame: (self: T) -> CFrame,
+	projectVirtualCursor: (self: T, virtualCursor: Vector2) -> Ray,
 }
 
 export type PlotCamera = DefaultCamera<PlotCamera> & {
