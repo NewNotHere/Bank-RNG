@@ -1,4 +1,5 @@
 const ClientTypes = require("../../ClientTypes")
+const Modules = require("../../Modules")
 const BaseGizmo = require("./BaseGizmo")
 
 type Translate = ClientTypes.TranslateGizmo
@@ -21,9 +22,20 @@ end
 
 function Translate.onCreated(self: Translate)
 	self._rawCFrame = self._cframe
+
+	local info = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
+	Modules.TweenModelSize(self._model, info, 1)
 end
 
-function Translate.onUpdate(self: Translate, dt: number) end
+function Translate.onUpdate(self: Translate, dt: number)
+	for _, part in self._model:GetChildren() do
+		local boxAdornment = part:FindFirstChildOfClass("BoxHandleAdornment")
+
+		if boxAdornment then
+			boxAdornment.Size = part.Size
+		end
+	end
+end
 
 function Translate.onMoveAttempt(self: Translate, ...: any)
 	local hovering = self:getHovering()
@@ -47,6 +59,11 @@ function Translate.onMoveAttempt(self: Translate, ...: any)
 	)
 
 	self._cframe = CFrame.new(snapped) * self._rawCFrame.Rotation
+end
+
+function Translate.onDestroyed(self: Translate)
+	local info = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
+	Modules.TweenModelSize(self._model, info, 0.001).Completed:Wait()
 end
 
 function Translate.moveZ(self: Translate, moveDelta: Vector2, dt: number)

@@ -1,66 +1,62 @@
 const React = require("../../../Packages/React")
-const BuildButton = require("../Classes/BuildButton")
+const BuildRegion = require("../Classes/BuildRegion")
+const TextButton = require("../Classes/TextButton")
 const PlacementContext = require("../Contexts/PlacementContext")
-const e = React.createElement
+const UIStateContext = require("../Contexts/UIStateContext")
+const useSpring = require("../Hooks/useSpring")
+local e = React.createElement
 
-local BUILD_BUTTONS = {
-	"Build",
-	"Translate",
-	"Rotate",
-}
+return function(props)
+	local context = React.useContext(UIStateContext.context)
+	local placementContext = React.useContext(PlacementContext.context)
+	local spring = useSpring(Vector2.new(0.02, 0.45), 7, 0.8)
 
-local function buttons(fragmentProps)
-	local _btns = {}
+	React.useEffect(function()
+		if context.state == "Build" then
+			spring.setTarget(Vector2.new(0.02, 0.45))
+		else
+			spring.setTarget(Vector2.new(-0.5, 0.45))
+		end
+	end, { context.state })
 
-	for index, context in BUILD_BUTTONS do
-		_btns[context] = e(BuildButton, {
-			Key = index,
-			Context = context,
-			Activated = fragmentProps[context],
-		})
-	end
-
-	return e(React.Fragment, nil, _btns)
-end
-
-return function()
-	local placement = React.useContext(PlacementContext.context)
-
-	return e("Frame", {
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.fromScale(0.5, 0.95),
-		Size = UDim2.fromScale(0.5, 0.15),
-		BorderSizePixel = 0,
-		BackgroundColor3 = Color3.fromRGB(61, 61, 61),
-		BackgroundTransparency = 0.2,
-	}, {
-		List = e("UIGridLayout", {
-			CellPadding = UDim2.fromScale(0.05, 0),
-			CellSize = UDim2.fromScale(0.8, 0.8),
-			FillDirection = Enum.FillDirection.Horizontal,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			VerticalAlignment = Enum.VerticalAlignment.Center,
-			SortOrder = Enum.SortOrder.LayoutOrder,
+	return e(React.Fragment, nil, {
+		Frame = e("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.fromScale(spring.position.X, spring.position.Y),
+			Size = UDim2.fromScale(0.2, 0.7),
 		}, {
-			Aspect = e("UIAspectRatioConstraint", {
-				AspectRatio = 1,
+			CloseButton = e(TextButton, {
+				Text = "X",
+				Size = UDim2.fromScale(0.1, 0.1),
+
+				[React.Event.Activated] = function()
+					context.setState("Menu")
+					placementContext.revertMode()
+				end,
+			}, {
+				Aspect = e("UIAspectRatioConstraint", {
+					AspectRatio = 1,
+				}),
 			}),
-		}),
-		Buttons = e(buttons, {
-			Build = function()
-				print("Build")
-				placement:setBuildMode()
-			end,
-
-			Translate = function()
-				print("Translate")
-				placement:setTranslateMode()
-			end,
-
-			Rotate = function()
-				print("Rotate")
-				placement:setRotateMode()
-			end,
+			Scrolling = e("ScrollingFrame", {
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = UDim2.fromScale(0.5, 1),
+				Size = UDim2.fromScale(1, 0.9),
+				BackgroundTransparency = 1,
+			}, {
+				UIList = e("UIListLayout", {
+					VerticalAlignment = Enum.VerticalAlignment.Top,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				}),
+				R1 = e(BuildRegion, {
+					Text = "Walls",
+					Assets = { "Wall", "ReinforcedWall" },
+				}),
+				R2 = e(BuildRegion, {
+					Text = "Defenses",
+					Assets = { "LaserArray" },
+				}),
+			}),
 		}),
 	})
 end

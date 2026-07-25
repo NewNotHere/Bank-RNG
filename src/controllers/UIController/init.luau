@@ -11,6 +11,7 @@ local function createContainer(): ScreenGui
 
 	local screen = Instance.new("ScreenGui")
 	screen.IgnoreGuiInset = true
+	screen.ZIndexBehavior = Enum.ZIndexBehavior.Global
 	screen.Name = "App"
 	screen.Parent = playerGui
 

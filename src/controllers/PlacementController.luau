@@ -7,6 +7,7 @@ const Trove = require("../Packages/Trove")
 const Gizmo = require("../Shared/Classes/Gizmo")
 const Mouse = require("../Shared/Classes/Mouse")
 const ClientTypes = require("../Shared/ClientTypes")
+const Modules = require("../Shared/Modules")
 const CameraController = require("./CameraController")
 const PlotController = require("./PlotController")
 
@@ -25,6 +26,16 @@ local VALID_STATES = {
 }
 
 local PRIORITY = Enum.RenderPriority.Character.Value
+
+local CELL = 1
+
+-- Snaps a coordinate to the grid so an object with the given half-extent tiles
+-- cleanly: even footprints snap their center onto grid lines, odd footprints onto
+-- cell centers, so the object's faces always land on stud boundaries.
+local function snapToGrid(value: number, halfExtent: number): number
+	local offset = halfExtent % CELL
+	return math.round((value - offset) / CELL) * CELL + offset
+end
 
 local function isStateValid(state: string): boolean
 	for _, stateValue in VALID_STATES do
@@ -51,7 +62,6 @@ end
 
 local Assets = ReplicatedStorage:WaitForChild("Assets")
 local Placeables = Assets:WaitForChild("Placeables")
-local STUDS = 1
 
 local PlacementController = {}
 
@@ -80,14 +90,7 @@ end
 function PlacementController.buildingState(self: PlacementController)
 	changeState(self, VALID_STATES.BUILD)
 
-	self._placing = Placeables:WaitForChild("LaserArray"):Clone()
-	self._trove:Add(function()
-		if self._placing then
-			self._placing:Destroy()
-
-			self._placing = nil
-		end
-	end)
+	self._placing = Placeables:WaitForChild("Wall"):Clone()
 	self:setPlacementVisual(self._placing :: Model)
 
 	self._trove:BindToRenderStep(VALID_STATES.BUILD, PRIORITY, function(dt: number)
@@ -105,8 +108,19 @@ function PlacementController.buildingState(self: PlacementController)
 		Enum.UserInputType.MouseButton1
 	)
 
+	ContextActionService:BindAction("Rotate", function(_: string, inputState: Enum.UserInputState, _: InputObject)
+		if inputState ~= Enum.UserInputState.End then
+			return
+		end
+
+		if self._placing then
+			self._placing:PivotTo(self._placing:GetPivot() * CFrame.Angles(0, math.pi / 2, 0))
+		end
+	end, false, Enum.KeyCode.R)
+
 	self._trove:Add(function()
 		ContextActionService:UnbindAction(VALID_STATES.BUILD)
+		ContextActionService:UnbindAction("Rotate")
 
 		if self._placing then
 			self._placing:Destroy()
@@ -116,22 +130,53 @@ function PlacementController.buildingState(self: PlacementController)
 end
 
 function PlacementController._buildUpdate(self: PlacementController, dt: number)
+	local plot = self._plotModel
+	if not plot then
+		return
+	end
+
 	local raycastParams = RaycastParams.new()
 	raycastParams.FilterType = Enum.RaycastFilterType.Include
-	raycastParams.FilterDescendantsInstances = { self._plotModel }
+	raycastParams.FilterDescendantsInstances = { plot }
 
 	local hit = self._mouse:GetHit(raycastParams)
 
 	if hit and self._placing then
-		local pos = hit.Position
-		local floored = Vector3.new(math.floor(pos.X / STUDS) * STUDS, pos.Y, math.floor(pos.Z / STUDS) * STUDS)
+		local model = self._placing
 
-		local _, bboxSize = self._placing:GetBoundingBox()
+		-- Preserve the current rotation (e.g. from the R key) instead of resetting it.
+		local rotation = model:GetPivot().Rotation
 
-		local placePos = Vector3.new(floored.X, floored.Y + bboxSize.Y / 2, floored.Z)
-		local facing = self:_getPlotFacing()
+		-- The bounding box (center + size), not the pivot, is what tiles the grid.
+		local bboxCFrame, bboxSize = model:GetBoundingBox()
+		local half = bboxSize / 2
 
-		self._placing:PivotTo(CFrame.lookAt(placePos, placePos + facing))
+		-- Snap relative to the plot's own origin (not the world origin) so the
+		-- grid lines up with the plot even when it's offset or rotated.
+		local plotCFrame = plot:GetPivot()
+
+		-- Footprint half-extents along the plot's X/Z axes (AABB of the possibly
+		-- rotated box), so a rotated wall still tiles cleanly.
+		local rel = plotCFrame:ToObjectSpace(bboxCFrame)
+		local footX = math.abs(rel.XVector.X) * half.X
+			+ math.abs(rel.YVector.X) * half.Y
+			+ math.abs(rel.ZVector.X) * half.Z
+		local footZ = math.abs(rel.XVector.Z) * half.X
+			+ math.abs(rel.YVector.Z) * half.Y
+			+ math.abs(rel.ZVector.Z) * half.Z
+
+		local localHit = plotCFrame:PointToObjectSpace(hit.Position)
+		local snappedX = snapToGrid(localHit.X, footX)
+		local snappedZ = snapToGrid(localHit.Z, footZ)
+		-- Rest the box's bottom face on the surface (center = surface + halfHeight).
+		local localCenter = Vector3.new(snappedX, localHit.Y + half.Y, snappedZ)
+
+		-- Where the bounding-box center should end up, in world space.
+		local targetCenter = CFrame.new((plotCFrame * CFrame.new(localCenter)).Position) * rotation
+
+		-- Back out the pivot so the center lands on target regardless of pivot offset.
+		local pivotToCenter = model:GetPivot():ToObjectSpace(bboxCFrame)
+		model:PivotTo(targetCenter * pivotToCenter:Inverse())
 	end
 end
 
@@ -302,6 +347,8 @@ function PlacementController.setPlotModel(self: PlacementController, model: Mode
 end
 
 function PlacementController.setPlacementVisual(self: PlacementController, model: Model)
+	Modules.ApplyForcefield(model)
+
 	for _, part in model:GetChildren() do
 		if not part:IsA("BasePart") then
 			continue
@@ -311,6 +358,27 @@ function PlacementController.setPlacementVisual(self: PlacementController, model
 		part.CanCollide = false
 	end
 	model.Parent = workspace
+end
+
+function PlacementController.setPlacementModel(self: PlacementController, modelName: string)
+	local model = Placeables:FindFirstChild(modelName)
+
+	if model then
+		if self._placing then
+			self._placing:Destroy()
+
+			self._placing = nil
+		end
+
+		self._placing = model:Clone()
+		self:setPlacementVisual(self._placing :: Model)
+	else
+		warn(`{modelName} is not a valid Placeable!`)
+	end
+end
+
+function PlacementController.getPlacementModel(self: PlacementController)
+	return self._placing
 end
 
 function PlacementController.tryPlace(self: PlacementController)

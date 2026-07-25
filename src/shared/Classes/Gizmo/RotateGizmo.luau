@@ -29,14 +29,30 @@ end
 function Rotate.onUpdate(self: Rotate, dt: number) end
 
 function Rotate.onMoveAttempt(self: Rotate, moveDelta: Vector2, dt: number, hitPosition: Vector3)
+	local hovering = self:getHovering()
+
 	if not hitPosition then
+		return
+	end
+
+	if not hovering then
 		return
 	end
 
 	local initialRotation = self._rawCFrame.Rotation
 	local centre = self._rawCFrame.Position
+	local axis = nil
+	if hovering.Name == "X" then
+		axis = self._zAxis
+	elseif hovering.Name == "Y" then
+		axis = self._yAxis
+	elseif hovering.Name == "Z" then
+		axis = self._xAxis
+	else
+		return
+	end
 
-	local worldAxis = initialRotation + self._yAxis
+	local worldAxis = initialRotation + axis
 	local axisEnd = centre + worldAxis.Position
 
 	local screenCentre = self._camera:WorldToScreenPoint(centre)
@@ -49,7 +65,9 @@ function Rotate.onMoveAttempt(self: Rotate, moveDelta: Vector2, dt: number, hitP
 	self._currentAngle += pixels * 0.1
 	local angle = math.ceil(self._currentAngle / 5) * 5
 
-	self._cframe = CFrame.new(self._cframe.Position) * CFrame.fromAxisAngle(self._yAxis, math.rad(angle))
+	self._cframe = CFrame.new(self._cframe.Position) * CFrame.fromAxisAngle(axis, math.rad(angle))
 end
+
+function Rotate.onDestroyed(self: Rotate) end
 
 return Rotate

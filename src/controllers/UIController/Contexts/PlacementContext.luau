@@ -1,10 +1,11 @@
+const RunService = game:GetService("RunService")
 const React = require("../../../Packages/React")
 const PlacementController = require("../../PlacementController")
 
 type PlacementContext = {
+	setPlacementModel: (name: string) -> (),
 	setBuildMode: () -> (),
-	setTranslateMode: () -> (),
-	setRotateMode: () -> (),
+	revertMode: () -> (),
 }
 
 local Context = React.createContext(nil :: PlacementContext?)
@@ -13,14 +14,16 @@ local e = React.createElement
 
 local function Provider(props)
 	local value = {
+		setPlacementModel = function(name: string)
+			PlacementController:setPlacementModel(name)
+		end,
+
 		setBuildMode = function()
 			PlacementController:buildingState()
 		end,
-		setTranslateMode = function()
-			PlacementController:translateState()
-		end,
-		setRotateMode = function()
-			PlacementController:rotateState()
+
+		revertMode = function()
+			PlacementController:abort()
 		end,
 	}
 

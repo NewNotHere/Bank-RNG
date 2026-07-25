@@ -2,6 +2,7 @@ const Debris = game:GetService("Debris")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Networker = require("@game/ReplicatedStorage/Packages/Networker")
 const Trove = require("@game/ReplicatedStorage/Packages/Trove")
+const PlaceablesClass = require("../ServerOnly/Placeables")
 const ServerTypes = require("../ServerOnly/ServerTypes")
 const PlotService = require("./PlotService")
 type PlacementService = ServerTypes.PlacementService
@@ -64,6 +65,11 @@ function PlacementService.tryPlace(self: PlacementService, player: Player, asset
 
 			permanentAsset:PivotTo(cframe)
 			permanentAsset.Parent = plot.Placed
+
+			local class = PlaceablesClass[permanentAsset.Name]
+			if class then
+				class.new(permanentAsset)
+			end
 		end
 	end
 end

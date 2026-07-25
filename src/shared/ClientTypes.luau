@@ -26,6 +26,8 @@ export type PlacementController = Controller<PlacementController> & {
 	scaleState: (self: PlacementController) -> (),
 
 	setPlacementVisual: (self: PlacementController, model: Model) -> (),
+	setPlacementModel: (self: PlacementController, modelName: string) -> (),
+	getPlacementModel: (self: PlacementController) -> Model?,
 	setPlotModel: (self: PlacementController, model: Model) -> (),
 
 	_buildUpdate: (self: PlacementController, dt: number) -> (),
@@ -98,6 +100,7 @@ export type Gizmo<T> = {
 	onCreated: (self: T) -> (),
 	onUpdate: (self: T, dt: number) -> (),
 	onMoveAttempt: (self: T, moveDelta: Vector2, dt: number, hitPosition: Vector3?) -> (),
+	onDestroyed: (self: T) -> (),
 	createGizmo: (self: T, position: Vector3, lookVector: Vector3?, rightVector: Vector3?, upVector: Vector3?) -> (),
 	updateGizmo: (self: T) -> (),
 	getNewCFrame: (self: T) -> CFrame,

@@ -1,5 +1,6 @@
 const Networker = require("@game/ReplicatedStorage/Packages/Networker")
 const Signal = require("@game/ReplicatedStorage/Packages/Signal")
+const Trove = require("@game/ReplicatedStorage/Packages/Trove")
 const ClientTypes = require("@game/ReplicatedStorage/Shared/ClientTypes")
 type Service<T> = ClientTypes.Controller<T>
 
@@ -27,6 +28,19 @@ export type PlacementService = Service<PlacementService> & {
 	networker: Networker.Server,
 
 	tryPlace: (self: PlacementService, player: Player, name: string, cframe: CFrame) -> (),
+}
+
+export type BaseAsset<T> = {
+	_model: Model,
+	_trove: Trove.Trove,
+
+	init: (self: T) -> (),
+	update: (self: T, dt: number) -> (),
+	destroy: (self: T) -> (),
+}
+
+export type LaserArray = BaseAsset<LaserArray> & {
+	setVisible: (self: LaserArray, visible: boolean) -> (),
 }
 
 return {}

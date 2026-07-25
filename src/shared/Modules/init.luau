@@ -1,4 +1,6 @@
-const TweenModel = require("@self/TweenModel")
+const ApplyForcefield = require("@self/ApplyForcefield")
+const TweenModelSize = require("@self/TweenModelSize")
 return {
-	TweenModel = TweenModel,
+	TweenModelSize = TweenModelSize,
+	ApplyForcefield = ApplyForcefield,
 }

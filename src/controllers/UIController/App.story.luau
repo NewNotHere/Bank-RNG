@@ -6,6 +6,7 @@ const e = React.createElement
 
 return function(target)
 	local root = ReactRoblox.createRoot(target)
+	print(target)
 	root:render(e(App))
 
 	return function()

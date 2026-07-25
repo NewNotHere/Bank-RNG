@@ -25,7 +25,7 @@ end
 local function showGizmoHovering(part: BasePart): ()
 	local adornment = part:FindFirstChildOfClass("BoxHandleAdornment")
 	if not adornment then
-		adornment = part:FindFirstAncestorOfClass("CylinderHandleAdornment")
+		adornment = part:FindFirstChildOfClass("CylinderHandleAdornment")
 	end
 
 	if adornment then
@@ -139,6 +139,7 @@ end
 function Gizmo.onCreated(self: Gizmo) end
 function Gizmo.onUpdate(self: Gizmo, dt: number) end
 function Gizmo.onMoveAttempt(self: Gizmo, moveDelta: Vector2, dt: number) end
+function Gizmo.onDestroyed(self: Gizmo) end
 --#endregion
 
 function Gizmo.createGizmo(
@@ -169,6 +170,7 @@ function Gizmo.getHovering(self: Gizmo)
 end
 
 function Gizmo.destroy(self: Gizmo)
+	self:onDestroyed()
 	self.cframeChanged:DisconnectAll()
 	self._trove:Destroy()
 end
