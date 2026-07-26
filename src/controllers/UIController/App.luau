@@ -1,4 +1,5 @@
 const React = require("../../Packages/React")
+const CameraContext = require("./Contexts/CameraContext")
 const PlacementContext = require("./Contexts/PlacementContext")
 const UIStateContext = require("./Contexts/UIStateContext")
 const Build = require("./Frames/Build")
@@ -9,11 +10,15 @@ const e = React.createElement
 return function()
 	return e(UIStateContext.provider, nil, {
 		Menu = e(PlacementContext.provider, nil, {
-			Menu = e(Menu),
+			CamContext = e(CameraContext.provider, nil, {
+				Menu = e(Menu),
+			}),
 		}),
 		CashFrame = e(Cash),
 		Build = e(PlacementContext.provider, nil, {
-			Build = e(Build),
+			CamContext = e(CameraContext.provider, nil, {
+				Build = e(Build),
+			}),
 		}),
 	})
 end

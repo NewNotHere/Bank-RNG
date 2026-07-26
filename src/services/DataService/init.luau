@@ -75,13 +75,17 @@ function DataService.playerRemoved(self: DataService, player: Player)
 end
 
 function DataService.getPlayerData(self: DataService, player: Player)
-	local session = self._sessions[player.UserId]
+	local session = self:getSession(player)
 
 	if session then
 		return session:getAll()
 	end
 
 	return nil
+end
+
+function DataService.getSession(self: DataService, player: Player)
+	return self._sessions[player.UserId]
 end
 
 return DataService :: DataService

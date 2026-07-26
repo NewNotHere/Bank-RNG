@@ -1,6 +1,7 @@
 const React = require("../../../Packages/React")
 const BuildRegion = require("../Classes/BuildRegion")
 const TextButton = require("../Classes/TextButton")
+const CameraContext = require("../Contexts/CameraContext")
 const PlacementContext = require("../Contexts/PlacementContext")
 const UIStateContext = require("../Contexts/UIStateContext")
 const useSpring = require("../Hooks/useSpring")
@@ -9,6 +10,8 @@ local e = React.createElement
 return function(props)
 	local context = React.useContext(UIStateContext.context)
 	local placementContext = React.useContext(PlacementContext.context)
+	local cameraContext = React.useContext(CameraContext.context)
+
 	local spring = useSpring(Vector2.new(0.02, 0.45), 7, 0.8)
 
 	React.useEffect(function()
@@ -32,6 +35,7 @@ return function(props)
 				[React.Event.Activated] = function()
 					context.setState("Menu")
 					placementContext.revertMode()
+					cameraContext.setDefaultCamera()
 				end,
 			}, {
 				Aspect = e("UIAspectRatioConstraint", {

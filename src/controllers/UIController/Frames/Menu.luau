@@ -1,5 +1,6 @@
 const React = require("../../../Packages/React")
 const BuildButton = require("../Classes/BuildButton")
+const CameraContext = require("../Contexts/CameraContext")
 const PlacementContext = require("../Contexts/PlacementContext")
 const UIStateContext = require("../Contexts/UIStateContext")
 const useSpring = require("../Hooks/useSpring")
@@ -34,6 +35,8 @@ end
 return function()
 	local context = React.useContext(UIStateContext.context)
 	local placementContext = React.useContext(PlacementContext.context)
+	local cameraContext = React.useContext(CameraContext.context)
+
 	local spring = useSpring(Vector2.new(0.5, 1.5), 10, 0.7)
 
 	React.useEffect(function()
@@ -68,6 +71,7 @@ return function()
 			Build = function()
 				context.setState("Build")
 				placementContext.setBuildMode()
+				cameraContext.setBuildCamera()
 			end,
 
 			Manage = function() end,

@@ -48,18 +48,27 @@ function PlotCamera.update(self: PlotCamera, dt: number)
 	local originCFrame = CFrame.new(plotCFrame.Position + Vector3.new(0, 50, 0), plotCFrame.Position)
 
 	local cf = self:getCFrame()
-	local flatLook = Vector3.new(cf.UpVector.X, 0, cf.UpVector.Z)
-	local flatRight = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z)
+	local flatLook = Vector3.new(cf.UpVector.X, 0, cf.UpVector.Z).Unit
+	local flatRight = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z).Unit
+
+	local halfX = bboxSize.X / 2
+	local halfZ = bboxSize.Z / 2
+
+	self._xOffset = math.clamp(self._xOffset, -halfX, halfX)
+	self._zOffset = math.clamp(self._zOffset, -halfZ, halfZ)
+
 	local offsetCFrame = (flatLook * self._zOffset) + (flatRight * self._xOffset)
 
-	self._cframe = self._cframe:Lerp(originCFrame + offsetCFrame, dt)
+	self._cframe = self._cframe:Lerp(originCFrame + offsetCFrame, dt * 2)
 end
 
 function PlotCamera.moveX(self: PlotCamera, direction: number)
 	self._xOffset += direction
+	print(self._xOffset, self._zOffset)
 end
 function PlotCamera.moveZ(self: PlotCamera, direction: number)
 	self._zOffset += direction
+	print(self._xOffset, self._zOffset)
 end
 
 return PlotCamera

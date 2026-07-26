@@ -1,9 +1,12 @@
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Networker = require("@game/ReplicatedStorage/Packages/Networker")
 const Signal = require("@game/ReplicatedStorage/Packages/Signal")
 const Trove = require("@game/ReplicatedStorage/Packages/Trove")
 const ServerTypes = require("../ServerOnly/ServerTypes")
 type PlotService = ServerTypes.PlotService
 type Plot = ServerTypes.Plot
+
+local PlotWall = ReplicatedStorage.Assets.Wall
 
 local function checkPlotForPlayer(plot: Plot)
 	return plot.Player ~= 0
@@ -104,6 +107,31 @@ function PlotService.removePlayerPlot(self: PlotService, player: Player)
 			plot.Player = 0
 			plot.Plot:SetAttribute("Owner", plot.Player)
 		end
+	end
+end
+
+function PlotService.createFloors(self: PlotService, player: Player, numFloors: number)
+	local function createWall(n: number)
+		local newWall = PlotWall:Clone()
+		local plot = self:getPlayerPlot(player)
+
+		if plot then
+			local primary = plot.PrimaryPart
+			if not primary then
+				return
+			end
+
+			local _, bboxWall = newWall:GetBoundingBox()
+
+			local newPos = CFrame.new(primary.Position + Vector3.new(0, 1, 0) + (Vector3.new(0, bboxWall.Y * n, 0)))
+
+			newWall:PivotTo(newPos)
+			newWall.Parent = plot.Walls
+		end
+	end
+
+	for i = 0, numFloors - 1 do
+		createWall(i)
 	end
 end
 

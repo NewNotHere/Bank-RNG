@@ -12,6 +12,8 @@ PlotService:start()
 
 DataService.dataLoaded:Connect(function(session)
 	PlotService:givePlotToPlayer(session._player)
+
+	PlotService:createFloors(session._player, session:get("Floors"))
 end)
 
 DataService.dataRemoved:Connect(function(session)

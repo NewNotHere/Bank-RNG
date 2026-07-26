@@ -39,6 +39,7 @@ export type DataService = Service<DataService> & {
 	playerJoined: (self: DataService, player: Player) -> (),
 	playerRemoved: (self: DataService, player: Player) -> (),
 	getPlayerData: (self: DataService, player: Player) -> Template?,
+	getSession: (self: DataService, player: Player) -> Session?,
 }
 
 export type PlotService = Service<PlotService> & {
@@ -53,6 +54,7 @@ export type PlotService = Service<PlotService> & {
 
 	getPlayerPlot: (self: PlotService, player: Player) -> Model?,
 	getPlotAxis: (self: PlotService, player: Player) -> CFrame?,
+	createFloors: (self: PlotService, player: Player, numFloors: number) -> (),
 }
 
 export type PlacementService = Service<PlacementService> & {
