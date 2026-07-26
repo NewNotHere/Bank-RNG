@@ -1,17 +1,19 @@
-const Players = game:GetService("Players")
+const DataService = require("./Services/DataService")
 const PlacementService = require("./Services/PlacementService")
 const PlotService = require("./Services/PlotService")
 
+DataService:init()
 PlacementService:init()
 PlotService:init()
 
+DataService:start()
 PlacementService:start()
 PlotService:start()
 
-Players.PlayerAdded:Connect(function(player: Player)
-	PlotService:givePlotToPlayer(player)
+DataService.dataLoaded:Connect(function(session)
+	PlotService:givePlotToPlayer(session._player)
 end)
 
-Players.PlayerRemoving:Connect(function(player: Player, _: Enum.PlayerExitReason)
-	PlotService:removePlayerPlot(player)
+DataService.dataRemoved:Connect(function(session)
+	PlotService:removePlayerPlot(session._player)
 end)

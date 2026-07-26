@@ -1,4 +1,6 @@
 const Networker = require("../Packages/Networker")
+const Promise = require("../Packages/Promise")
+const ReactRoblox = require("../Packages/ReactRoblox")
 const Signal = require("../Packages/Signal")
 const Trove = require("../Packages/Trove")
 
@@ -64,10 +66,25 @@ export type InputController = Controller<InputController> & {
 	_mappings: { InputMap },
 	_values: { [Enum.KeyCode | Enum.UserInputType]: number | Vector2 },
 	_inputType: Enum.PreferredInput,
+	_mobileRoot: ReactRoblox.RootType?,
+	_mobileButtons: {},
+
+	deviceChanged: Signal.Signal<Enum.PreferredInput>,
 
 	registerInputMap: (self: InputController, inputMap: InputMap) -> (),
 	getInputValue: (self: InputController, key: Enum.KeyCode | Enum.UserInputType) -> (number | Vector2)?,
 	getDeviceInput: (self: InputController) -> Enum.PreferredInput,
+}
+
+export type DataController = Controller<DataController> & {
+	_replicatedData: any,
+	networker: Networker.Client,
+
+	dataUpdated: Signal.Signal<string, any>,
+
+	publishDataLoad: (self: DataController) -> (),
+	replicatePlayerData: (self: DataController, key: string, newValue: any) -> (),
+	waitForProfileLoaded: (self: DataController) -> typeof(Promise.new()),
 }
 
 export type Mouse = {

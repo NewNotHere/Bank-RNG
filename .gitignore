@@ -9,3 +9,4 @@ sourcemap.json
 .claude
 Packages/
 scripts/
+ServerPackages/

@@ -1,6 +1,8 @@
 const Networker = require("@game/ReplicatedStorage/Packages/Networker")
 const Signal = require("@game/ReplicatedStorage/Packages/Signal")
 const Trove = require("@game/ReplicatedStorage/Packages/Trove")
+const Template = require("../Services/DataService/Template")
+const ProfileStore = require("../ServerPackages/ProfileStore")
 const ClientTypes = require("@game/ReplicatedStorage/Shared/ClientTypes")
 type Service<T> = ClientTypes.Controller<T>
 
@@ -8,6 +10,35 @@ export type Plot = {
 	Player: number,
 	Plot: Model,
 	Spawn: SpawnLocation,
+}
+
+export type PlayerProfile = ProfileStore.Profile<Template>
+
+export type Template = typeof(Template)
+
+export type Session = {
+	_player: Player,
+	_profile: PlayerProfile?,
+
+	dataLoaded: Signal.Signal<PlayerProfile>,
+	dataUpdated: Signal.Signal<string, any>,
+
+	init: (self: Session) -> (),
+	getAll: (self: Session) -> Template,
+	get: (self: Session, key: string) -> any,
+	destroy: (self: Session) -> (),
+}
+
+export type DataService = Service<DataService> & {
+	_sessions: { [number]: Session },
+	networker: Networker.Server,
+
+	dataLoaded: Signal.Signal<Session>,
+	dataRemoved: Signal.Signal<Session>,
+
+	playerJoined: (self: DataService, player: Player) -> (),
+	playerRemoved: (self: DataService, player: Player) -> (),
+	getPlayerData: (self: DataService, player: Player) -> Template?,
 }
 
 export type PlotService = Service<PlotService> & {

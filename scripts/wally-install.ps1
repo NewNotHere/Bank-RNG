@@ -25,6 +25,11 @@ try {
     wally-package-types --sourcemap sourcemap.json Packages/
     if ($LASTEXITCODE -ne 0) { throw "wally-package-types failed (exit $LASTEXITCODE)" }
 
+    if (Test-Path ServerPackages) {
+        wally-package-types --sourcemap sourcemap.json ServerPackages/
+        if ($LASTEXITCODE -ne 0) { throw "wally-package-types (ServerPackages) failed (exit $LASTEXITCODE)" }
+    }
+
     Write-Host "Done. Packages installed and typed." -ForegroundColor Green
 }
 finally {

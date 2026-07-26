@@ -1,6 +1,11 @@
 local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
+const Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+const MobileFrame = require("@self/React/MobileFrame")
+const React = require("../Packages/React")
+const ReactRoblox = require("../Packages/ReactRoblox")
+const Signal = require("../Packages/Signal")
 const Trove = require("../Packages/Trove")
 const ClientTypes = require("../Shared/ClientTypes")
 
@@ -37,6 +42,18 @@ local function getValueTypeFromKey(self: InputController, key: Enum.KeyCode | En
 	return nil
 end
 
+local function createMobileGui(): ScreenGui
+	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+	local mobileRoot = Instance.new("ScreenGui")
+	mobileRoot.Name = "Mobile"
+	mobileRoot.IgnoreGuiInset = true
+	mobileRoot.ResetOnSpawn = false
+	mobileRoot.Parent = playerGui
+
+	return mobileRoot
+end
+
 local InputController = {}
 
 function InputController.init(self: InputController)
@@ -47,12 +64,32 @@ function InputController.init(self: InputController)
 	self._mappings = {}
 	self._values = {}
 	self._inputType = Enum.PreferredInput.KeyboardAndMouse
+	self._mobileRoot = nil
+	self._mobileButtons = {}
+
+	self.deviceChanged = Signal.new()
 end
 
 function InputController.start(self: InputController)
 	self._trove:Connect(UserInputService:GetPropertyChangedSignal("PreferredInput"), function(...): ...any
 		self._inputType = UserInputService.PreferredInput
+
+		self.deviceChanged:Fire(self._inputType)
 	end)
+
+	self._trove:Add(self.deviceChanged:Connect(function(input: Enum.PreferredInput)
+		if input == Enum.PreferredInput.Touch then
+			local gui = createMobileGui()
+			local root = ReactRoblox.createRoot(gui)
+			root:render(React.createElement(MobileFrame))
+
+			self._mobileRoot = root
+		else
+			if self._mobileRoot then
+				self._mobileRoot:unmount()
+			end
+		end
+	end))
 end
 
 function InputController.abort(self: InputController)
@@ -99,4 +136,4 @@ function InputController.getDeviceInput(self: InputController)
 	return self._inputType
 end
 
-return InputController
+return InputController :: InputController

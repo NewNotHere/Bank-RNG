@@ -10,7 +10,7 @@ local Context = React.createContext(nil :: Context?)
 local e = React.createElement
 
 local function provider(props)
-	local uiState, setUIState = React.useState("Build")
+	local uiState, setUIState = React.useState("Menu")
 
 	local value = {
 		state = uiState,

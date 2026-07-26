@@ -1,4 +1,3 @@
-const ContextActionService = game:GetService("ContextActionService")
 const UserInputService = game:GetService("UserInputService")
 const ClientTypes = require("../../ClientTypes")
 const DefaultCamera = require("./DefaultCamera")
@@ -46,11 +45,10 @@ function PlotCamera.update(self: PlotCamera, dt: number)
 
 	local plotCFrame = self._plot:GetPivot()
 	local _, bboxSize = self._plot:GetBoundingBox()
-	local originCFrame =
-		CFrame.new(plotCFrame.Position + Vector3.new(0, 20, bboxSize.Z), self._plot:GetPivot().Position)
+	local originCFrame = CFrame.new(plotCFrame.Position + Vector3.new(0, 50, 0), plotCFrame.Position)
 
 	local cf = self:getCFrame()
-	local flatLook = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
+	local flatLook = Vector3.new(cf.UpVector.X, 0, cf.UpVector.Z)
 	local flatRight = Vector3.new(cf.RightVector.X, 0, cf.RightVector.Z)
 	local offsetCFrame = (flatLook * self._zOffset) + (flatRight * self._xOffset)
 
