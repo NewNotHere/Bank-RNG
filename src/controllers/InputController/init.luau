@@ -1,7 +1,8 @@
-local ContextActionService = game:GetService("ContextActionService")
-local HttpService = game:GetService("HttpService")
+const ContextActionService = game:GetService("ContextActionService")
+const HttpService = game:GetService("HttpService")
 const Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+const UserInputService = game:GetService("UserInputService")
+local MobileButton = require("@self/React/MobileButton")
 const MobileFrame = require("@self/React/MobileFrame")
 const React = require("../Packages/React")
 const ReactRoblox = require("../Packages/ReactRoblox")
@@ -54,6 +55,18 @@ local function createMobileGui(): ScreenGui
 	return mobileRoot
 end
 
+local function getDefaultControls()
+	local success, playerModule = pcall(function()
+		return require(Players.LocalPlayer.PlayerScripts:WaitForChild("PlayerModule") :: any)
+	end)
+
+	if success then
+		return playerModule:GetControls()
+	end
+
+	error(`Error while trying to fetch PlayerModule! {playerModule}`)
+end
+
 local InputController = {}
 
 function InputController.init(self: InputController)
@@ -66,15 +79,21 @@ function InputController.init(self: InputController)
 	self._inputType = Enum.PreferredInput.KeyboardAndMouse
 	self._mobileRoot = nil
 	self._mobileButtons = {}
+	self._defaultControls = nil
 
 	self.deviceChanged = Signal.new()
 end
 
 function InputController.start(self: InputController)
-	self._trove:Connect(UserInputService:GetPropertyChangedSignal("PreferredInput"), function(...): ...any
-		self._inputType = UserInputService.PreferredInput
+	self._defaultControls = getDefaultControls()
 
-		self.deviceChanged:Fire(self._inputType)
+	self._trove:Connect(UserInputService:GetPropertyChangedSignal("PreferredInput"), function(...): ...any
+		local changedDeviceType = UserInputService.PreferredInput
+		if changedDeviceType ~= self._inputType then
+			self._inputType = changedDeviceType
+
+			self.deviceChanged:Fire(self._inputType)
+		end
 	end)
 
 	self._trove:Add(self.deviceChanged:Connect(function(input: Enum.PreferredInput)
@@ -134,6 +153,46 @@ end
 
 function InputController.getDeviceInput(self: InputController)
 	return self._inputType
+end
+
+function InputController.getInputAxis(self: InputController)
+	--Thumbstick
+	if not self._defaultControls then
+		return
+	end
+
+	if self._inputType == Enum.PreferredInput.KeyboardAndMouse then
+		warn(`Keyboard Input cannot retrieve a continuous InputAxis`)
+		return
+	end
+
+	local moveVector = self._defaultControls:GetMoveVector()
+	local vector2Move = Vector2.new(moveVector.X, -moveVector.Z)
+
+	if vector2Move.Magnitude == 0 then
+		return vector2Move
+	end
+
+	return vector2Move.Unit
+end
+
+function InputController.addMobileButton(
+	self: InputController,
+	mobileButtonProps: ClientTypes.MobileButton,
+	cb: (...any) -> (),
+	...: any?
+)
+	local args = table.pack(...)
+
+	local newButton = React.createElement(MobileButton, {
+		Position = mobileButtonProps.Position or UDim2.fromScale(0, 0),
+		Type = mobileButtonProps.Type or "Small",
+		Icon = mobileButtonProps.Icon or "",
+		ScaleRatio = mobileButtonProps.ScaleRatio or 1,
+		Callback = function()
+			cb(unpack(args))
+		end,
+	})
 end
 
 return InputController :: InputController

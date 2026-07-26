@@ -67,6 +67,7 @@ export type InputController = Controller<InputController> & {
 	_values: { [Enum.KeyCode | Enum.UserInputType]: number | Vector2 },
 	_inputType: Enum.PreferredInput,
 	_mobileRoot: ReactRoblox.RootType?,
+	_defaultControls: any?,
 	_mobileButtons: {},
 
 	deviceChanged: Signal.Signal<Enum.PreferredInput>,
@@ -74,6 +75,15 @@ export type InputController = Controller<InputController> & {
 	registerInputMap: (self: InputController, inputMap: InputMap) -> (),
 	getInputValue: (self: InputController, key: Enum.KeyCode | Enum.UserInputType) -> (number | Vector2)?,
 	getDeviceInput: (self: InputController) -> Enum.PreferredInput,
+	getInputAxis: (self: InputController) -> Vector2,
+	addMobileButton: (self: InputController, mobileButtonProps: MobileButton, cb: (...any?) -> (), ...any?) -> (),
+}
+export type MobileButton = {
+	Position: UDim2,
+	Type: "Big" | "Small",
+	Icon: string,
+	ScaleRatio: number,
+	Callback: () -> (),
 }
 
 export type DataController = Controller<DataController> & {
