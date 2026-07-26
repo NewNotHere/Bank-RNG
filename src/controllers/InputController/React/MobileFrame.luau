@@ -1,4 +1,5 @@
 const React = require("../../../Packages/React")
+const MobileStore = require("../MobileStore")
 local e = React.createElement
 
 local SMALL_SCREEN_THRESHOLD = 500
@@ -6,6 +7,15 @@ local SMALL_SCREEN_SCALE = 0.6
 
 return function(props)
 	local scale, setScale = React.useState(1)
+	local buttons, setButtons = React.useState(MobileStore.getSnapshot())
+
+	React.useEffect(function()
+		local c = MobileStore.changed:Connect(setButtons)
+		setButtons(MobileStore:getSnapshot())
+		return function()
+			c:Disconnect()
+		end
+	end, {})
 
 	React.useEffect(function()
 		local c = nil
@@ -36,6 +46,6 @@ return function(props)
 		Scale = e("UIScale", {
 			Scale = scale,
 		}),
-		Buttons = e(React.Fragment, nil, props.children),
+		Buttons = e(React.Fragment, nil, buttons),
 	})
 end

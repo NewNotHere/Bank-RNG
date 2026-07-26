@@ -29,12 +29,58 @@ local PRIORITY = Enum.RenderPriority.Character.Value
 
 local CELL = 1
 
--- Snaps a coordinate to the grid so an object with the given half-extent tiles
--- cleanly: even footprints snap their center onto grid lines, odd footprints onto
--- cell centers, so the object's faces always land on stud boundaries.
 local function snapToGrid(value: number, halfExtent: number): number
 	local offset = halfExtent % CELL
-	return math.round((value - offset) / CELL) * CELL + offset
+	return math.floor((value - offset) / CELL) * CELL + offset
+end
+
+local function getSnappedPivot(self: PlacementController): CFrame?
+	local plot = self._plotModel
+	local model = self._placing
+	if not plot or not model then
+		return nil
+	end
+
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterType = Enum.RaycastFilterType.Include
+	raycastParams.FilterDescendantsInstances = { plot.PrimaryPart }
+
+	local hit = self._mouse:GetHit(raycastParams)
+	if not hit or hit.Normal.Unit ~= Vector3.yAxis then
+		return nil
+	end
+
+	local bboxCFrame, bboxSize = model:GetBoundingBox()
+
+	-- Preserve the current rotation (e.g. from the R key) instead of resetting it.
+	local rotation = model:GetPivot().Rotation
+
+	-- The bounding box (center + size), not the pivot, is what tiles the grid.
+	local half = bboxSize / 2
+
+	-- Snap relative to the plot's own origin (not the world origin) so the
+	-- grid lines up with the plot even when it's offset or rotated.
+	local plotCFrame = plot:GetPivot()
+
+	-- Footprint half-extents along the plot's X/Z axes (AABB of the possibly
+	-- rotated box), so a rotated wall still tiles cleanly.
+	local rel = plotCFrame:ToObjectSpace(bboxCFrame)
+	local footX = math.abs(rel.XVector.X) * half.X + math.abs(rel.YVector.X) * half.Y + math.abs(rel.ZVector.X) * half.Z
+	local footZ = math.abs(rel.XVector.Z) * half.X + math.abs(rel.YVector.Z) * half.Y + math.abs(rel.ZVector.Z) * half.Z
+
+	local localHit = plotCFrame:PointToObjectSpace(hit.Position)
+	local snappedX = snapToGrid(localHit.X, footX)
+	local snappedZ = snapToGrid(localHit.Z, footZ)
+	-- Rest the box's bottom face on the surface (center = surface + halfHeight).
+	local localCenter = Vector3.new(snappedX, localHit.Y + half.Y, snappedZ)
+
+	-- Where the bounding-box center should end up, in world space.
+	local targetCenter = CFrame.new((plotCFrame * CFrame.new(localCenter)).Position) * rotation
+
+	-- Back out the pivot so the center lands on target regardless of pivot offset.
+	local pivotToCenter = model:GetPivot():ToObjectSpace(bboxCFrame)
+
+	return targetCenter * pivotToCenter:Inverse()
 end
 
 local function isStateValid(state: string): boolean
@@ -130,53 +176,11 @@ function PlacementController.buildingState(self: PlacementController)
 end
 
 function PlacementController._buildUpdate(self: PlacementController, dt: number)
-	local plot = self._plotModel
-	if not plot then
-		return
-	end
+	local model = self._placing
+	local targetPivot = getSnappedPivot(self)
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterType = Enum.RaycastFilterType.Include
-	raycastParams.FilterDescendantsInstances = { plot }
-
-	local hit = self._mouse:GetHit(raycastParams)
-
-	if hit and self._placing then
-		local model = self._placing
-
-		-- Preserve the current rotation (e.g. from the R key) instead of resetting it.
-		local rotation = model:GetPivot().Rotation
-
-		-- The bounding box (center + size), not the pivot, is what tiles the grid.
-		local bboxCFrame, bboxSize = model:GetBoundingBox()
-		local half = bboxSize / 2
-
-		-- Snap relative to the plot's own origin (not the world origin) so the
-		-- grid lines up with the plot even when it's offset or rotated.
-		local plotCFrame = plot:GetPivot()
-
-		-- Footprint half-extents along the plot's X/Z axes (AABB of the possibly
-		-- rotated box), so a rotated wall still tiles cleanly.
-		local rel = plotCFrame:ToObjectSpace(bboxCFrame)
-		local footX = math.abs(rel.XVector.X) * half.X
-			+ math.abs(rel.YVector.X) * half.Y
-			+ math.abs(rel.ZVector.X) * half.Z
-		local footZ = math.abs(rel.XVector.Z) * half.X
-			+ math.abs(rel.YVector.Z) * half.Y
-			+ math.abs(rel.ZVector.Z) * half.Z
-
-		local localHit = plotCFrame:PointToObjectSpace(hit.Position)
-		local snappedX = snapToGrid(localHit.X, footX)
-		local snappedZ = snapToGrid(localHit.Z, footZ)
-		-- Rest the box's bottom face on the surface (center = surface + halfHeight).
-		local localCenter = Vector3.new(snappedX, localHit.Y + half.Y, snappedZ)
-
-		-- Where the bounding-box center should end up, in world space.
-		local targetCenter = CFrame.new((plotCFrame * CFrame.new(localCenter)).Position) * rotation
-
-		-- Back out the pivot so the center lands on target regardless of pivot offset.
-		local pivotToCenter = model:GetPivot():ToObjectSpace(bboxCFrame)
-		model:PivotTo(targetCenter * pivotToCenter:Inverse())
+	if model and targetPivot then
+		model:PivotTo(model:GetPivot():Lerp(targetPivot, dt * 10))
 	end
 end
 
@@ -382,9 +386,19 @@ function PlacementController.getPlacementModel(self: PlacementController)
 end
 
 function PlacementController.tryPlace(self: PlacementController)
-	if self._placing then
-		self.networker:fire("tryPlace", self._placing.Name, self._placing:GetPivot())
+	local model = self._placing
+	if not model then
+		return
 	end
+
+	local snappedCFrame = getSnappedPivot(self)
+	if not snappedCFrame then
+		return
+	end
+
+	model:PivotTo(snappedCFrame)
+
+	self.networker:fire("tryPlace", model.Name, snappedCFrame)
 end
 --#endregion
 

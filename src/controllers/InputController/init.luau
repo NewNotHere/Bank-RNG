@@ -2,7 +2,7 @@ const ContextActionService = game:GetService("ContextActionService")
 const HttpService = game:GetService("HttpService")
 const Players = game:GetService("Players")
 const UserInputService = game:GetService("UserInputService")
-local MobileButton = require("@self/React/MobileButton")
+const MobileStore = require("@self/MobileStore")
 const MobileFrame = require("@self/React/MobileFrame")
 const React = require("../Packages/React")
 const ReactRoblox = require("../Packages/ReactRoblox")
@@ -43,16 +43,21 @@ local function getValueTypeFromKey(self: InputController, key: Enum.KeyCode | En
 	return nil
 end
 
-local function createMobileGui(): ScreenGui
+local function getMobileGui(): ScreenGui
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local mobileGui = playerGui:FindFirstChild("Mobile")
 
-	local mobileRoot = Instance.new("ScreenGui")
-	mobileRoot.Name = "Mobile"
-	mobileRoot.IgnoreGuiInset = true
-	mobileRoot.ResetOnSpawn = false
-	mobileRoot.Parent = playerGui
+	if not mobileGui then
+		local mobileRoot = Instance.new("ScreenGui")
+		mobileRoot.Name = "Mobile"
+		mobileRoot.IgnoreGuiInset = true
+		mobileRoot.ResetOnSpawn = false
+		mobileRoot.Parent = playerGui
 
-	return mobileRoot
+		mobileGui = mobileRoot
+	end
+
+	return mobileGui
 end
 
 local function getDefaultControls()
@@ -77,7 +82,6 @@ function InputController.init(self: InputController)
 	self._mappings = {}
 	self._values = {}
 	self._inputType = Enum.PreferredInput.KeyboardAndMouse
-	self._mobileRoot = nil
 	self._mobileButtons = {}
 	self._defaultControls = nil
 
@@ -97,18 +101,18 @@ function InputController.start(self: InputController)
 	end)
 
 	self._trove:Add(self.deviceChanged:Connect(function(input: Enum.PreferredInput)
-		if input == Enum.PreferredInput.Touch then
-			local gui = createMobileGui()
-			local root = ReactRoblox.createRoot(gui)
-			root:render(React.createElement(MobileFrame))
+		local gui = getMobileGui()
 
-			self._mobileRoot = root
+		if input == Enum.PreferredInput.Touch then
+			gui.Enabled = true
 		else
-			if self._mobileRoot then
-				self._mobileRoot:unmount()
-			end
+			gui.Enabled = false
 		end
 	end))
+
+	local gui = getMobileGui()
+	local root = ReactRoblox.createRoot(gui)
+	root:render(React.createElement(MobileFrame))
 end
 
 function InputController.abort(self: InputController)
@@ -156,7 +160,6 @@ function InputController.getDeviceInput(self: InputController)
 end
 
 function InputController.getInputAxis(self: InputController)
-	--Thumbstick
 	if not self._defaultControls then
 		return
 	end
@@ -184,15 +187,23 @@ function InputController.addMobileButton(
 )
 	local args = table.pack(...)
 
-	local newButton = React.createElement(MobileButton, {
+	local props = {
 		Position = mobileButtonProps.Position or UDim2.fromScale(0, 0),
 		Type = mobileButtonProps.Type or "Small",
 		Icon = mobileButtonProps.Icon or "",
 		ScaleRatio = mobileButtonProps.ScaleRatio or 1,
 		Callback = function()
-			cb(unpack(args))
+			if cb then
+				cb(unpack(args, 1, args.n))
+			end
 		end,
-	})
+	}
+	local id = getUUID()
+	MobileStore.add(id, props)
+end
+
+function InputController.removeMobileButtons(self: InputController, btnId: string)
+	MobileStore.remove(btnId)
 end
 
 return InputController :: InputController
