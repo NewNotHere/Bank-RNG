@@ -10,24 +10,11 @@ type PlacementService = ServerTypes.PlacementService
 local Assets = ReplicatedStorage:WaitForChild("Assets")
 local Placeables = Assets:WaitForChild("Placeables")
 
-local function isAssetWithinPlot(plot: Model, cframe: CFrame, size: Vector3): boolean
-	local bboxCFrame, bboxSize = plot:GetBoundingBox()
-
-	local testPart = Instance.new("Part")
-	testPart.Size = size
-	testPart.CFrame = cframe
-	testPart.Transparency = 1
-	testPart.Parent = workspace.TryPlace
-	Debris:AddItem(testPart, 1)
-
-	local overlapParams = OverlapParams.new()
-	overlapParams.FilterType = Enum.RaycastFilterType.Include
-	overlapParams.FilterDescendantsInstances = { testPart }
-
-	local result = workspace:GetPartBoundsInBox(bboxCFrame, bboxSize + Vector3.new(0, 50, 0), overlapParams)
+local function canPlace(cframe: CFrame, size: Vector3): boolean
+	local result = workspace:GetPartBoundsInBox(cframe, size - Vector3.new(0.1, 0.1, 0.1))
 
 	if #result > 0 then
-		return true
+		return false
 	end
 
 	return true
@@ -57,7 +44,7 @@ function PlacementService.tryPlace(self: PlacementService, player: Player, asset
 		if permanentAsset then
 			local _, bboxSize = permanentAsset:GetBoundingBox()
 
-			if not isAssetWithinPlot(plot, cframe, bboxSize) then
+			if not canPlace(cframe, bboxSize) then
 				return
 			end
 

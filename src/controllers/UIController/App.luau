@@ -1,4 +1,5 @@
 const React = require("../../Packages/React")
+const IntIndex = require("./Classes/IntIndex")
 const CameraContext = require("./Contexts/CameraContext")
 const PlacementContext = require("./Contexts/PlacementContext")
 const UIStateContext = require("./Contexts/UIStateContext")
@@ -20,5 +21,7 @@ return function()
 				Build = e(Build),
 			}),
 		}),
+
+		--IntIndex = e(IntIndex),
 	})
 end

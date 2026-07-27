@@ -180,6 +180,19 @@ function PlacementController._buildUpdate(self: PlacementController, dt: number)
 	local targetPivot = getSnappedPivot(self)
 
 	if model and targetPivot then
+		local bboxCFrame, bboxSize = model:GetBoundingBox()
+		local overlapParams = OverlapParams.new()
+		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+		overlapParams.FilterDescendantsInstances = { model }
+
+		local numPartsInside =
+			workspace:GetPartBoundsInBox(bboxCFrame, bboxSize - Vector3.new(0.1, 0.1, 0.1), overlapParams)
+		if #numPartsInside > 0 then
+			Modules.ApplyForcefield(model, Color3.fromRGB(231, 24, 24))
+		else
+			Modules.ApplyForcefield(model)
+		end
+
 		model:PivotTo(model:GetPivot():Lerp(targetPivot, dt * 10))
 	end
 end
