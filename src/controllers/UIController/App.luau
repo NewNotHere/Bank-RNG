@@ -6,6 +6,7 @@ const UIStateContext = require("./Contexts/UIStateContext")
 const Build = require("./Frames/Build")
 const Menu = require("./Frames/Menu")
 const Cash = require("./Frames/Cash")
+local Select = require("./Frames/Select")
 const e = React.createElement
 
 return function()
@@ -21,6 +22,7 @@ return function()
 				Build = e(Build),
 			}),
 		}),
+		SelectFrame = e(Select),
 
 		--IntIndex = e(IntIndex),
 	})

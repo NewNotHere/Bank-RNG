@@ -23,19 +23,21 @@ export type PlacementController = Controller<PlacementController> & {
 	_placing: Model?,
 	_state: string,
 	_highlight: Highlight?,
+	_selected: Model?,
 
 	networker: Networker.Client,
 	placementStateChanged: Signal.Signal<string>,
 
+	getState: (self: PlacementController) -> string,
 	buildingState: (self: PlacementController) -> (),
-	translateState: (self: PlacementController) -> (),
-	rotateState: (self: PlacementController) -> (),
-	scaleState: (self: PlacementController) -> (),
+	selectState: (self: PlacementController) -> (),
 
 	setPlacementVisual: (self: PlacementController, model: Model) -> (),
 	setPlacementModel: (self: PlacementController, modelName: string) -> (),
 	getPlacementModel: (self: PlacementController) -> Model?,
 	setPlotModel: (self: PlacementController, model: Model) -> (),
+	getSelected: (self: PlacementController) -> Model?,
+	select: (self: PlacementController, modelToSelect: Model) -> (),
 
 	_buildUpdate: (self: PlacementController, dt: number) -> (),
 	_hoverUpdate: (self: PlacementController, dt: number) -> (),
@@ -58,6 +60,7 @@ export type CameraController = Controller<CameraController> & {
 
 	switchCam: (self: CameraController, newCam: DefaultCamera<{}>) -> (),
 	getCamera: (self: CameraController) -> Camera,
+	getActiveCamera: (self: CameraController) -> DefaultCamera<{}>,
 }
 
 export type UIController = Controller<UIController> & {}
@@ -124,10 +127,12 @@ export type PlotCamera = DefaultCamera<PlotCamera> & {
 	_plot: Model,
 	_xOffset: number,
 	_zOffset: number,
-	_character: Model,
+	_inspecting: Model?,
 
 	moveX: (self: PlotCamera, direction: number) -> (),
 	moveZ: (self: PlotCamera, direction: number) -> (),
+	inspectWall: (self: PlotCamera, wallModel: Model) -> (),
+	stopWallInspection: (self: PlotCamera) -> (),
 }
 
 export type Gizmo<T> = {

@@ -136,6 +136,8 @@ function InputController.registerInputMap(self: InputController, inputMap: Clien
 
 	self._trove:Add(function()
 		ContextActionService:UnbindAction(uuid)
+		table.remove(self._mappings, table.find(self._mappings, inputMap))
+		self._values[inputMap.Key] = nil
 	end)
 end
 

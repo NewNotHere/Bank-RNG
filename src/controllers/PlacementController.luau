@@ -15,18 +15,19 @@ type PlacementController = ClientTypes.PlacementController
 
 local VALID_STATES = {
 	BUILD = "Build",
+	SELECT = "Select",
 	TRANSLATE = "Translate",
 	ROTATE = "Rotate",
 	SCALE = "Scale",
 } :: {
 	BUILD: string,
+	SELECT: string,
 	TRANSLATE: string,
 	ROTATE: string,
 	SCALE: string,
 }
 
 local PRIORITY = Enum.RenderPriority.Character.Value
-
 local CELL = 1
 
 local function snapToGrid(value: number, halfExtent: number): number
@@ -106,6 +107,18 @@ local function changeState(self: PlacementController, newState: string)
 	end
 end
 
+local function createHighlight(parent: Instance): Highlight
+	local highlight = Instance.new("Highlight")
+	highlight.FillTransparency = 1
+	highlight.Parent = parent
+
+	return highlight
+end
+
+local function getHighlightFromModel(model: Model): Highlight?
+	return model:FindFirstChildWhichIsA("Highlight", true)
+end
+
 local Assets = ReplicatedStorage:WaitForChild("Assets")
 local Placeables = Assets:WaitForChild("Placeables")
 
@@ -119,6 +132,7 @@ function PlacementController.init(self: PlacementController)
 	self._placing = nil
 	self._state = "Build"
 	self._highlight = nil
+	self._selected = nil
 
 	self.placementStateChanged = Signal.new()
 
@@ -131,6 +145,10 @@ function PlacementController.abort(self: PlacementController)
 	self._trove:Clean()
 end
 --#endregion
+
+function PlacementController.getState(self: PlacementController)
+	return self._state
+end
 
 --#region State handling
 function PlacementController.buildingState(self: PlacementController)
@@ -216,111 +234,39 @@ function PlacementController._getPlotFacing(self: PlacementController): Vector3
 	return flat.Unit
 end
 
-function PlacementController.translateState(self: PlacementController)
-	changeState(self, VALID_STATES.TRANSLATE)
-	local gizmo = Gizmo.Translate.new(CameraController:getCamera())
+function PlacementController.selectState(self: PlacementController)
+	changeState(self, VALID_STATES.SELECT)
 
-	self._trove:BindToRenderStep(VALID_STATES.TRANSLATE, PRIORITY, function(dt: number)
+	self._trove:BindToRenderStep(VALID_STATES.SELECT, PRIORITY, function(dt: number)
 		self:_hoverUpdate(dt)
 	end)
 
-	local selected: Model? = nil
-	local selectedRotation = CFrame.identity
-	gizmo.cframeChanged:Connect(function(newCFrame: CFrame)
-		if selected then
-			selected:PivotTo(CFrame.new(newCFrame.Position) * selectedRotation)
-		end
-	end)
+	ContextActionService:BindAction(
+		VALID_STATES.SELECT,
+		function(_: string, inputState: Enum.UserInputState, _: InputObject)
+			if inputState == Enum.UserInputState.End then
+				local hit = self._mouse:GetHit()
+				if hit then
+					local model = hit.Instance:FindFirstAncestorOfClass("Model")
+					if model == workspace then
+						return
+					end
 
-	ContextActionService:BindAction("SELECT", function(_: string, inputState: Enum.UserInputState, _: InputObject)
-		if inputState ~= Enum.UserInputState.End then
-			return
-		end
-
-		local highlight = self._highlight
-		if not highlight then
-			return
-		end
-
-		if not highlight.Adornee then
-			return
-		end
-		selected = highlight.Adornee
-
-		if selected then
-			local pivot = selected:GetPivot()
-			selectedRotation = pivot.Rotation
-
-			local axis = PlotController:getPlotAxis()
-			gizmo:createGizmo(pivot.Position, axis.LookVector, axis.RightVector, axis.UpVector)
-		end
-	end, false, Enum.UserInputType.MouseButton1)
+					self:select(model)
+				end
+			end
+		end,
+		false,
+		Enum.UserInputType.MouseButton1
+	)
 
 	self._trove:Add(function()
-		ContextActionService:UnbindAction("SELECT")
-		gizmo:destroy()
-
-		if self._highlight then
-			self._highlight:Destroy()
-			self._highlight = nil
-		end
+		ContextActionService:UnbindAction(VALID_STATES.SELECT)
 	end)
 end
+--#endregion
 
-function PlacementController.rotateState(self: PlacementController)
-	changeState(self, VALID_STATES.ROTATE)
-	local gizmo = Gizmo.Rotate.new(CameraController:getCamera())
-
-	self._trove:BindToRenderStep(VALID_STATES.ROTATE, PRIORITY, function(dt: number)
-		self:_hoverUpdate(dt)
-	end)
-
-	local selected: Model? = nil
-	gizmo.cframeChanged:Connect(function(cframe: CFrame)
-		if selected then
-			selected:PivotTo(cframe)
-		end
-	end)
-
-	ContextActionService:BindAction("SELECT", function(_: string, inputState: Enum.UserInputState, _: InputObject)
-		if inputState ~= Enum.UserInputState.End then
-			return
-		end
-
-		local highlight = self._highlight
-		if not highlight then
-			return
-		end
-
-		if not highlight.Adornee then
-			return
-		end
-		selected = highlight.Adornee
-
-		if selected then
-			gizmo:createGizmo(selected:GetPivot().Position)
-		end
-	end, false, Enum.UserInputType.MouseButton1)
-
-	self._trove:Add(function()
-		ContextActionService:UnbindAction("SELECT")
-		gizmo:destroy()
-
-		if self._highlight then
-			self._highlight:Destroy()
-			self._highlight = nil
-		end
-	end)
-end
-
-function PlacementController.scaleState(self: PlacementController)
-	changeState(self, VALID_STATES.SCALE)
-
-	self._trove:BindToRenderStep(VALID_STATES.SCALE, PRIORITY, function(dt: number)
-		self:_hoverUpdate(dt)
-	end)
-end
-
+--#region selection
 function PlacementController._hoverUpdate(self: PlacementController, dt: number)
 	if not self._plotModel then
 		return
@@ -335,9 +281,7 @@ function PlacementController._hoverUpdate(self: PlacementController, dt: number)
 	local hit = self._mouse:GetHit(raycastParams)
 	if hit then
 		if not self._highlight then
-			local highlight = Instance.new("Highlight")
-			highlight.Parent = Players.LocalPlayer.PlayerGui
-			highlight.FillTransparency = 1
+			local highlight = createHighlight(Players.LocalPlayer.PlayerGui)
 			self._trove:Add(highlight)
 
 			self._highlight = highlight
@@ -356,6 +300,29 @@ function PlacementController._hoverUpdate(self: PlacementController, dt: number)
 		end
 	end
 end
+
+function PlacementController.getSelected(self: PlacementController)
+	return self._selected
+end
+
+function PlacementController.select(self: PlacementController, modelToSelect: Model)
+	if self._selected then
+		local highlight = getHighlightFromModel(self._selected)
+
+		if highlight then
+			highlight:Destroy()
+		end
+	end
+
+	local selectedHighlight = createHighlight(modelToSelect)
+	self._selected = modelToSelect
+
+	self._trove:Add(selectedHighlight)
+	self._trove:Add(function()
+		self._selected = nil
+	end)
+end
+
 --#endregion
 
 --#region Building

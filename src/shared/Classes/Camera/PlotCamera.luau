@@ -4,29 +4,7 @@ const DefaultCamera = require("./DefaultCamera")
 
 type PlotCamera = ClientTypes.PlotCamera
 
-local PlotCamera = {}
-PlotCamera.__index = PlotCamera
-setmetatable(PlotCamera, { __index = DefaultCamera })
-
-function PlotCamera.new(plotFocus: Model)
-	local self = setmetatable(DefaultCamera.new() :: PlotCamera, PlotCamera)
-
-	self._plot = plotFocus
-	self._xOffset = 0
-	self._zOffset = 0
-
-	return self
-end
-
-function PlotCamera.enable(self: PlotCamera)
-	self._camera.CameraType = Enum.CameraType.Scriptable
-
-	self._trove:Add(function() end)
-end
-
-function PlotCamera.update(self: PlotCamera, dt: number)
-	local plotSpawn = self._plot:FindFirstChild("PlotSpawn")
-
+local function freeMovement(self: PlotCamera, dt: number)
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) then
 		self:moveX(-1)
 	end
@@ -62,6 +40,41 @@ function PlotCamera.update(self: PlotCamera, dt: number)
 	self._cframe = self._cframe:Lerp(originCFrame + offsetCFrame, dt * 2)
 end
 
+local function inspection(self: PlotCamera, dt: number)
+	local wallModel = self._inspecting :: Model
+	local wallCframe = wallModel:GetPivot()
+	local goalCframe = wallCframe * CFrame.new(wallCframe.LookVector * -5)
+
+	self._cframe = self._cframe:Lerp(CFrame.new(goalCframe.Position, goalCframe.Position + wallCframe.Position), dt)
+end
+
+local PlotCamera = {}
+PlotCamera.__index = PlotCamera
+setmetatable(PlotCamera, { __index = DefaultCamera })
+
+function PlotCamera.new(plotFocus: Model)
+	local self = setmetatable(DefaultCamera.new() :: PlotCamera, PlotCamera)
+
+	self._plot = plotFocus
+	self._xOffset = 0
+	self._zOffset = 0
+	self._inspecting = nil
+
+	return self
+end
+
+function PlotCamera.enable(self: PlotCamera)
+	self._camera.CameraType = Enum.CameraType.Scriptable
+end
+
+function PlotCamera.update(self: PlotCamera, dt: number)
+	if self._inspecting then
+		inspection(self, dt)
+	else
+		freeMovement(self, dt)
+	end
+end
+
 function PlotCamera.moveX(self: PlotCamera, direction: number)
 	self._xOffset += direction
 	print(self._xOffset, self._zOffset)
@@ -69,6 +82,14 @@ end
 function PlotCamera.moveZ(self: PlotCamera, direction: number)
 	self._zOffset += direction
 	print(self._xOffset, self._zOffset)
+end
+
+function PlotCamera.inspectWall(self: PlotCamera, wallModel: Model)
+	self._inspecting = wallModel
+end
+
+function PlotCamera.stopWallInspection(self: PlotCamera)
+	self._inspecting = nil
 end
 
 return PlotCamera

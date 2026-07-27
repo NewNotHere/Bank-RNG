@@ -6,6 +6,11 @@ const e = React.createElement
 
 return function(target)
 	local root = ReactRoblox.createRoot(target)
+	local screenGui = target:FindFirstAncestorOfClass("ScreenGui") :: ScreenGui
+	if screenGui then
+		screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+	end
+
 	root:render(e(App))
 
 	return function()

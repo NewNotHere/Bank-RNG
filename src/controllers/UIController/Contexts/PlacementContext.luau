@@ -5,6 +5,7 @@ const PlacementController = require("../../PlacementController")
 type PlacementContext = {
 	setPlacementModel: (name: string) -> (),
 	setBuildMode: () -> (),
+	setSelectMode: () -> (),
 	revertMode: () -> (),
 }
 
@@ -15,11 +16,19 @@ local e = React.createElement
 local function Provider(props)
 	local value = {
 		setPlacementModel = function(name: string)
+			if PlacementController:getState() ~= "Build" then
+				return
+			end
+
 			PlacementController:setPlacementModel(name)
 		end,
 
 		setBuildMode = function()
 			PlacementController:buildingState()
+		end,
+
+		setSelectMode = function()
+			PlacementController:selectState()
 		end,
 
 		revertMode = function()

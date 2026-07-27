@@ -28,6 +28,10 @@ return function(props)
 			Position = UDim2.fromScale(spring.position.X, spring.position.Y),
 			Size = UDim2.fromScale(0.2, 0.7),
 		}, {
+			Aspect = e("UIAspectRatioConstraint", {
+				AspectRatio = 0.6,
+			}),
+
 			CloseButton = e(TextButton, {
 				Text = "X",
 				Size = UDim2.fromScale(0.1, 0.1),
@@ -42,10 +46,27 @@ return function(props)
 					AspectRatio = 1,
 				}),
 			}),
-			Scrolling = e("ScrollingFrame", {
+			SelectButton = e(TextButton, {
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.fromScale(0.5, 1),
-				Size = UDim2.fromScale(1, 0.9),
+				Size = UDim2.fromScale(0.7, 0.15),
+				BackgroundTransparency = 1,
+				Text = "Select",
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+
+				[React.Event.Activated] = function()
+					context.setState("Select")
+					placementContext:setSelectMode()
+				end,
+			}, {
+				Stroke = e("UIStroke", {
+					Thickness = 3,
+				}),
+			}),
+			Scrolling = e("ScrollingFrame", {
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.fromScale(1, 0.7),
 				BackgroundTransparency = 1,
 			}, {
 				UIList = e("UIListLayout", {

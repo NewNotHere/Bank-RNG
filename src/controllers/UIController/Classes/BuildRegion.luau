@@ -23,7 +23,6 @@ local function btn(props)
 		TextColor3 = Color3.fromRGB(255, 255, 255),
 
 		[React.Event.Activated] = function()
-			print("Switched!")
 			context.setPlacementModel(props.Text)
 		end,
 

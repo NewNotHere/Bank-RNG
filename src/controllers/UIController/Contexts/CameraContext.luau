@@ -1,6 +1,8 @@
 const React = require("../../../Packages/React")
 const Camera = require("../../../Shared/Classes/Camera")
+local ClientTypes = require("../../../Shared/ClientTypes")
 const CameraController = require("../../CameraController")
+local PlacementController = require("../../PlacementController")
 const PlotController = require("../../PlotController")
 
 type CameraContext = {
@@ -24,6 +26,23 @@ local function provider(props)
 
 		setDefaultCamera = function()
 			CameraController:switchCam(Camera.DefaultCamera.new())
+		end,
+
+		inspectWall = function()
+			local camera = (CameraController:getActiveCamera() :: any) :: ClientTypes.PlotCamera
+			local currentSelected = PlacementController:getSelected()
+
+			if camera then
+				camera:inspectWall(currentSelected)
+			end
+		end,
+
+		stopWallInspection = function()
+			local camera = (CameraController:getActiveCamera() :: any) :: ClientTypes.PlotCamera
+
+			if camera then
+				camera:stopWallInspection()
+			end
 		end,
 	}
 
